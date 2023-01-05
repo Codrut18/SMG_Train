@@ -19,6 +19,8 @@ void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 unsigned int loadCubemap(std::vector<std::string> faces);
 
+glm::vec3 moveTrain(float& X, float& Y, float& Z, float& DegreesY, float& DegreesZ);
+
 
 // settings
 const unsigned int SCR_WIDTH = 1920;
@@ -39,6 +41,7 @@ float lastFrame = 0.0f;
 
 int main()
 {
+	std::cout << "<ENTER> Start the train movement\n<BACKSPACE> Stop the train movement\n<1> Driver Camera\n<2> Outside Camera\n<3> Free Camera\n<+> Increase train speed\n<-> Decrease train speed\n";
 	
 	// glfw: initialize and configure
 	// ------------------------------
@@ -136,6 +139,7 @@ int main()
 
 	Shader shader("ShadowMapping.vs", "ShadowMapping.fs");
 	Shader simpleDepthShader("ShadowMappingDepth.vs", "ShadowMappingDepth.fs");
+	Shader trainShader("model.vs", "model.fs");
 
 	// skybox VAO
 	unsigned int skyboxVAO, skyboxVBO;
@@ -155,6 +159,9 @@ int main()
 
 
 	Model terrain(localPath.string() + "/Resources/terrain/terrain.obj");
+	Model tom(localPath.string() + "/Resources/train/asd/0Q1GQ99342K5Y2OJFEP68SLNO.obj");
+	Model driverWagon(localPath.string() + "/Resources/train/tren/emd-gp40-2/train.obj");
+
 
 	// configure depth map FBO
 	// -----------------------
@@ -265,9 +272,10 @@ int main()
 		// draw scene as normal
 
 		terrainShader.use();
+		trainShader.use();
 
-
-
+		trainShader.setMat4("projection", projection);
+		trainShader.setMat4("view", view);
 		terrainShader.setMat4("projection", projection);
 		terrainShader.setMat4("view", view);
 
@@ -275,7 +283,7 @@ int main()
 		// render the loaded model
 
 		glm::mat4 _terrain = glm::mat4(1.0f);
-
+		glm::mat4 train = glm::mat4(1.0f);
 
 
 		// terrain
@@ -285,6 +293,16 @@ int main()
 		terrainShader.setMat4("model", _terrain);
 		terrain.Draw(terrainShader);
 
+		//train 
+		if (!start)
+			train = glm::translate(train, glm::vec3(startX, startY, startZ));
+		else train = glm::translate(train, moveTrain(startX, startY, startZ, rotY, rotZ));
+
+		train = glm::scale(train, glm::vec3(4.3f, 4.3f, 4.3f)); // make it a little bigger							   
+		train = glm::rotate(train, glm::radians(90.0f + rotY), glm::vec3(0, 1, 0)); // train starts at 90 degrees rotation to face forward
+		train = glm::rotate(train, glm::radians(0.0f + rotZ), glm::vec3(0, 0, 1));
+		trainShader.setMat4("model", train);
+		driverWagon.Draw(trainShader);
 
 		//// 1. render depth of scene to texture (from light's perspective)
 		//// --------------------------------------------------------------
@@ -325,6 +343,17 @@ int main()
 		//glBindTexture(GL_TEXTURE_2D, cubemapTexture);
 		//glActiveTexture(GL_TEXTURE1);
 		//glBindTexture(GL_TEXTURE_2D, depthMap);
+
+		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) // driver camera
+			key = 1;
+		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) // 3rd person camera
+			key = 2;
+		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) // free camera
+			key = 3;
+		if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) // start train
+			start = 1;
+		if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS) // stop train
+			start = 0;
 
 
 	
@@ -504,4 +533,238 @@ unsigned int loadCubemap(std::vector<std::string> faces)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	return textureID;
+}
+
+glm::vec3 moveTrain(float& X, float& Y, float& Z, float& DegreesY, float& DegreesZ)
+{
+
+	if (X == -265 && Z > 114)
+	{
+		Z -= 0.1 * speed;
+	}
+	else if (X < -248 && Z > -40)
+	{
+		if (DegreesY > -12.5)
+			DegreesY -= 0.2;
+
+		X += 0.02 * speed;
+		Z -= 0.1 * speed;
+		Y += 0.004 * speed;
+	}
+	else if (X < -214 && Z > -28)
+	{
+		if (DegreesY > -27)
+			DegreesY -= 0.2;
+
+		X += 0.05 * speed;
+		Z -= 0.082 * speed;
+		Y += 0.002 * speed;
+	}
+	else if (X < -170 && Z > -82)
+	{
+		if (DegreesY > -40)
+			DegreesY -= 0.3;
+
+		X += 0.06 * speed;
+		Z -= 0.09 * speed;
+		Y += 0.002 * speed;
+	}
+	else if (X < -111 && Z > -139)
+	{
+		if (DegreesY > -52)
+			DegreesY -= 0.3;
+
+		X += 0.07 * speed;
+		Z -= 0.07 * speed;
+		Y += 0.002 * speed;
+	}
+	else if (X < -54 && Z > -174)
+	{
+		if (DegreesY > -60)
+			DegreesY -= 0.3;
+
+		X += 0.09 * speed;
+		Z -= 0.055 * speed;
+		Y += 0.002 * speed;
+	}
+	else if (X < 159 && Z > -248)
+	{
+
+		if (DegreesY > -73)
+			DegreesY -= 0.3;
+
+		X += 0.09 * speed;
+		Z -= 0.028 * speed;
+		Y += 0.003 * speed;
+	}
+	else if (X < 270 && Z > -353)
+	{
+		if (DegreesY < -50)
+			DegreesY += 0.3;
+
+		X += 0.07 * speed;
+		Z -= 0.07 * speed;
+		Y += 0.003 * speed;
+	}
+	else if (X < 303 && Z > -419)
+	{
+		if (DegreesY < -25)
+			DegreesY += 0.3;
+
+		X += 0.04 * speed;
+		Z -= 0.07 * speed;
+		Y += 0.004 * speed;
+	}
+	else if (X < 329 && Z > -492)
+	{
+		if (DegreesY < -17)
+			DegreesY += 0.3;
+
+		X += 0.04 * speed;
+		Z -= 0.11 * speed;
+		Y += 0.006 * speed;
+	}
+	else if (X < 340 && Z > -566)
+	{
+		if (DegreesY < 0)
+			DegreesY += 0.3;
+		if (DegreesZ < 5)
+			DegreesZ += 0.3;
+
+		X += 0.02 * speed;
+		Z -= 0.09 * speed;
+		Y += 0.01 * speed;
+	}
+	else if (X < 349 && Z > -657)
+	{
+		X += 0.008 * speed;
+		Z -= 0.1 * speed;
+		Y += 0.012 * speed;
+	}
+	else if (X < 359 && Z > -766)
+	{
+		X += 0.014 * speed;
+		Z -= 0.13 * speed;
+		Y += 0.012 * speed;
+	}
+	else if (X < 365 && Z > -838)
+	{
+		X += 0.01 * speed;
+		Z -= 0.1 * speed;
+		Y += 0.006 * speed;
+	}
+	else if (X< 369 && Z > -901)
+	{
+
+		X += 0.006 * speed;
+		Z -= 0.1 * speed;
+		Y += 0.013 * speed;
+	}
+	else if (X < 371 && Z > -965)
+	{
+		X += 0.003 * speed;
+		Z -= 0.1 * speed;
+		Y += 0.017 * speed;
+	}
+	else if (X < 372 && Z > -1059)
+	{
+		Z -= 0.12 * speed;
+		Y += 0.016 * speed;
+	}
+	else if (X < 372 && Z > -1137)
+	{
+		Z -= 0.12 * speed;
+		Y += 0.025 * speed;
+	}
+	else if (X < 376 && Z > -1240)
+	{
+		if (DegreesZ > -10)
+			DegreesZ -= 0.3;
+		if (X > 390)
+			Y -= 0.015;
+
+		X += 0.003 * speed;
+		Z -= 0.12 * speed;
+		Y -= 0.024 * speed;
+	}
+	else if (X < 404 && Z > -1435)
+	{
+		if (DegreesZ > -15)
+			DegreesZ -= 0.3;
+		if (DegreesY < -5)
+			DegreesY += 0.3;
+
+		X += 0.02 * speed;
+		Z -= 0.13 * speed;
+		Y -= 0.03 * speed;
+	}
+	else if (X < 406 && Z > -1507)
+	{
+		if (DegreesZ < 0)
+			DegreesZ += 0.3;
+
+		X += 0.003 * speed;
+		Z -= 0.13 * speed;
+		Y -= 0.01 * speed;
+	}
+	else if (X > 390 && Z > -1582)
+	{
+		if (DegreesY < 15)
+			DegreesY += 0.3;
+
+		X -= 0.01 * speed;
+		Z -= 0.1 * speed;
+		Y -= 0.01 * speed;
+	}
+	else if (X > 351 && Z > -1648)
+	{
+		if (DegreesY < 30)
+			DegreesY += 0.3;
+
+		X -= 0.064 * speed;
+		Z -= 0.1 * speed;
+		Y -= 0.004 * speed;
+	}
+	else if (X > 294 && Z > -1705)
+	{
+		if (DegreesY < 50)
+			DegreesY += 0.3;
+
+		X -= 0.1 * speed;
+		Z -= 0.1 * speed;
+	}
+	else if (X > 240 && Z > -1735)
+	{
+		if (DegreesY < 60)
+			DegreesY += 0.3;
+
+		X -= 0.12 * speed;
+		Z -= 0.08 * speed;
+	}
+	else if (X > 167 && Z > -1761)
+	{
+		if (DegreesY < 70)
+			DegreesY += 0.3;
+
+		X -= 0.15 * speed;
+		Z -= 0.06 * speed;
+		Y -= 0.004 * speed;
+	}
+	else if (X > -128 && Z > -1763)
+	{
+		if (DegreesY < 90)
+			DegreesY += 0.3;
+
+		X -= 0.16 * speed;
+		Z -= 0.01 * speed;
+		Y += 0.007;
+	}
+	else if (X > -136 && Z > -1765)
+	{
+		X -= 0.13 * speed;
+		Z -= 0.0013 * speed;
+		Y += 0.007 * speed;
+	}
+
+	return glm::vec3(X, Y, Z);
 }
