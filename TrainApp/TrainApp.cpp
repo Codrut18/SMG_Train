@@ -355,6 +355,21 @@ int main()
 		if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS) // stop train
 			start = 0;
 
+		switch (key)
+		{
+		case 1:
+			if (!start)
+				camera.setViewMatrix(glm::vec3(-260.0f, -2.0f, 167.0f));
+			else
+				key = 2;
+			break;
+		case 2:
+			camera.setViewMatrix(glm::vec3(startX - 15, startY + 50, startZ + 100));
+			break;
+		default:
+			break;
+		}
+
 
 	
 		// draw skybox as last
