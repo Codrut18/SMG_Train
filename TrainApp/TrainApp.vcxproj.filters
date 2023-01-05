@@ -18,5 +18,60 @@
     <ClCompile Include="TrainApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Resources\Include\glad\src\glad.c">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShadowMapping.vs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ShadowMappingDepth.fs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ShadowMappingDepth.vs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ShadowMapping.fs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="skybox.fs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="skybox.vs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="model.fs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="model.vs">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
