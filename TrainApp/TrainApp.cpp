@@ -138,7 +138,6 @@ int main()
 	Shader ndStationShader("model.vs", "model.fs");
 	Shader bvSignShader("model.vs", "model.fs");
 	Shader bucSignShader("model.vs", "model.fs");
-	Shader tomShader("model.vs", "model.fs");
 	Shader lightingShader("PhongLight.vs", "PhongLight.fs");
 	Shader lightCubeShader("Lamp.vs", "Lamp.fs");
 	Shader shader("ShadowMapping.vs", "ShadowMapping.fs");
@@ -296,11 +295,10 @@ int main()
 		terrainShader.setMat4("view", view);
 		stationShader.setMat4("projection", projection);
 		stationShader.setMat4("view", view);
-		tomShader.setMat4("projection", projection);
-		tomShader.setMat4("view", view);
+		
 
 		// render the loaded model
-		glm::mat4 _tom = glm::mat4(1.0f);
+	
 		glm::mat4 train = glm::mat4(1.0f);
 		glm::mat4 _terrain = glm::mat4(1.0f);
 		glm::mat4 _station = glm::mat4(1.0f);
@@ -331,12 +329,6 @@ int main()
 		trainShader.setMat4("model", train);
 		driverWagon.Draw(trainShader);
 
-		//tom
-		_tom = glm::translate(_tom, glm::vec3(-161.0f, 48.0f, -1886.0f));
-		_tom = glm::scale(_tom, glm::vec3(110.0f, 110.0f, 110.0f));
-		_tom = glm::rotate(_tom, glm::radians(180.0f), glm::vec3(0, 1, 0));
-		tomShader.setMat4("model", _tom);
-		tom.Draw(tomShader);
 
 		// terrain
 
