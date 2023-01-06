@@ -2,7 +2,6 @@
 #include <vector>
 //#include <freeglut.h>
 
-
 #include "Camera.h"
 #include "Shader.h"
 #include "Model.h"
@@ -10,7 +9,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-
+namespace fs = std::filesystem;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -18,9 +17,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 unsigned int loadCubemap(std::vector<std::string> faces);
-
 glm::vec3 moveTrain(float& X, float& Y, float& Z, float& DegreesY, float& DegreesZ);
-
 
 // settings
 const unsigned int SCR_WIDTH = 1920;
@@ -42,7 +39,7 @@ float lastFrame = 0.0f;
 int main()
 {
 	std::cout << "<ENTER> Start the train movement\n<BACKSPACE> Stop the train movement\n<1> Driver Camera\n<2> Outside Camera\n<3> Free Camera\n<+> Increase train speed\n<-> Decrease train speed\n";
-	
+
 	// glfw: initialize and configure
 	// ------------------------------
 	glfwInit();
@@ -133,13 +130,19 @@ int main()
 	glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 	// build and compile shaders
-	// ----------------------
+	// -------------------------
 	Shader skyboxShader("skybox.vs", "skybox.fs");
+	Shader trainShader("model.vs", "model.fs");
 	Shader terrainShader("model.vs", "model.fs");
-
+	Shader stationShader("model.vs", "model.fs");
+	Shader ndStationShader("model.vs", "model.fs");
+	Shader bvSignShader("model.vs", "model.fs");
+	Shader bucSignShader("model.vs", "model.fs");
+	Shader tomShader("model.vs", "model.fs");
+	Shader lightingShader("PhongLight.vs", "PhongLight.fs");
+	Shader lightCubeShader("Lamp.vs", "Lamp.fs");
 	Shader shader("ShadowMapping.vs", "ShadowMapping.fs");
 	Shader simpleDepthShader("ShadowMappingDepth.vs", "ShadowMappingDepth.fs");
-	Shader trainShader("model.vs", "model.fs");
 
 	// skybox VAO
 	unsigned int skyboxVAO, skyboxVBO;
@@ -153,16 +156,15 @@ int main()
 
 	// load textures
 	// -------------
-	
-	std::filesystem::path localPath = std::filesystem::current_path();
+	fs::path localPath = fs::current_path();
 	std::string textureFolder = localPath.string() + "/Resources/Textures";
 
-
-	Model terrain(localPath.string() + "/Resources/terrain/terrain.obj");
-	Model tom(localPath.string() + "/Resources/train/asd/0Q1GQ99342K5Y2OJFEP68SLNO.obj");
 	Model driverWagon(localPath.string() + "/Resources/train/tren/emd-gp40-2/train.obj");
-
-
+	Model terrain(localPath.string() + "/Resources/terrain/terrain.obj");
+	Model station(localPath.string() + "/Resources/station/milwaukeeroaddepot.obj");
+	Model secondStation(localPath.string() + "/Resources/station/milwaukeeroaddepot.obj");
+	Model bvSign(localPath.string() + "/Resources/station/bvSign/ExitSign_HiPoly.obj");
+	Model bucSign(localPath.string() + "/Resources/station/bucSign/ExitSign_HiPoly.obj");
 	// configure depth map FBO
 	// -----------------------
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -249,18 +251,31 @@ int main()
 		// -----
 		processInput(window);
 
-		
+		lightingShader.use();
+		lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+		lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		lightingShader.setVec3("lightPos", lightPos);
+		lightingShader.setVec3("viewPos", camera.Position);
 
 		// view/projection transformations
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 3000.0f);
 		glm::mat4 view = camera.GetViewMatrix();
-		
+		lightingShader.setMat4("projection", projection);
+		lightingShader.setMat4("view", view);
+
 		// world transformation
 		glm::mat4 model = glm::mat4(1.0f);
-		
+		lightingShader.setMat4("model", model);
 
 		// also draw the lamp object
-		
+		lightCubeShader.use();
+		lightCubeShader.setMat4("projection", projection);
+		lightCubeShader.setMat4("view", view);
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(10.0f));
+		lightCubeShader.setMat4("model", model);
+
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -270,21 +285,58 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// draw scene as normal
-
-		terrainShader.use();
+		stationShader.use();
 		trainShader.use();
+		terrainShader.use();
+		tomShader.use();
 
 		trainShader.setMat4("projection", projection);
 		trainShader.setMat4("view", view);
 		terrainShader.setMat4("projection", projection);
 		terrainShader.setMat4("view", view);
-
+		stationShader.setMat4("projection", projection);
+		stationShader.setMat4("view", view);
+		tomShader.setMat4("projection", projection);
+		tomShader.setMat4("view", view);
 
 		// render the loaded model
-
-		glm::mat4 _terrain = glm::mat4(1.0f);
+		glm::mat4 _tom = glm::mat4(1.0f);
 		glm::mat4 train = glm::mat4(1.0f);
+		glm::mat4 _terrain = glm::mat4(1.0f);
+		glm::mat4 _station = glm::mat4(1.0f);
+		glm::mat4 _ndStation = glm::mat4(1.0f);
+		glm::mat4 _bvSign = glm::mat4(1.0f);
+		glm::mat4 _bucSign = glm::mat4(1.0f);
 
+
+
+
+
+
+
+
+
+
+
+
+		// train
+		if (!start)
+			train = glm::translate(train, glm::vec3(startX, startY, startZ));
+		else
+			train = glm::translate(train, moveTrain(startX, startY, startZ, rotY, rotZ));
+
+		train = glm::scale(train, glm::vec3(4.3f, 4.3f, 4.3f)); // make it a little bigger							   
+		train = glm::rotate(train, glm::radians(90.0f + rotY), glm::vec3(0, 1, 0)); // train starts at 90 degrees rotation to face forward
+		train = glm::rotate(train, glm::radians(0.0f + rotZ), glm::vec3(0, 0, 1));
+		trainShader.setMat4("model", train);
+		driverWagon.Draw(trainShader);
+
+		//tom
+		_tom = glm::translate(_tom, glm::vec3(-161.0f, 48.0f, -1886.0f));
+		_tom = glm::scale(_tom, glm::vec3(110.0f, 110.0f, 110.0f));
+		_tom = glm::rotate(_tom, glm::radians(180.0f), glm::vec3(0, 1, 0));
+		tomShader.setMat4("model", _tom);
+		tom.Draw(tomShader);
 
 		// terrain
 
@@ -293,16 +345,34 @@ int main()
 		terrainShader.setMat4("model", _terrain);
 		terrain.Draw(terrainShader);
 
-		//train 
-		if (!start)
-			train = glm::translate(train, glm::vec3(startX, startY, startZ));
-		else train = glm::translate(train, moveTrain(startX, startY, startZ, rotY, rotZ));
+		// start station
+		_station = glm::translate(_station, glm::vec3(-320.0f, -17.0f, 180.0f));
+		_station = glm::scale(_station, glm::vec3(0.03f, 0.03f, 0.03f));
+		_station = glm::rotate(_station, glm::radians(90.0f), glm::vec3(0, 1, 0));
+		stationShader.setMat4("model", _station);
+		station.Draw(stationShader);
 
-		train = glm::scale(train, glm::vec3(4.3f, 4.3f, 4.3f)); // make it a little bigger							   
-		train = glm::rotate(train, glm::radians(90.0f + rotY), glm::vec3(0, 1, 0)); // train starts at 90 degrees rotation to face forward
-		train = glm::rotate(train, glm::radians(0.0f + rotZ), glm::vec3(0, 0, 1));
-		trainShader.setMat4("model", train);
-		driverWagon.Draw(trainShader);
+		// end station
+		_ndStation = glm::translate(_ndStation, glm::vec3(-90.0f, 22.0f, -1860.0f));
+		_ndStation = glm::scale(_ndStation, glm::vec3(0.03f, 0.03f, 0.03f));
+		_ndStation = glm::rotate(_ndStation, glm::radians(10.0f), glm::vec3(0, 1, 0));
+		ndStationShader.setMat4("model", _ndStation);
+		secondStation.Draw(ndStationShader);
+
+		// bucuresti sign
+		_bucSign = glm::translate(_bucSign, glm::vec3(-291.0f, 55.0f, 180.0f));
+		_bucSign = glm::scale(_bucSign, glm::vec3(7.0f, 7.0f, 7.0f));
+		_bucSign = glm::rotate(_bucSign, glm::radians(90.0f), glm::vec3(0, 1, 0));
+		bucSignShader.setMat4("model", _bucSign);
+		bucSign.Draw(bvSignShader);
+
+		// brasov sign
+		_bvSign = glm::translate(_bvSign, glm::vec3(-85.0f, 93.5f, -1831.0f));
+		_bvSign = glm::scale(_bvSign, glm::vec3(7.0f, 7.0f, 7.0f));
+		_bvSign = glm::rotate(_bvSign, glm::radians(10.0f), glm::vec3(0, 1, 0));
+		bvSignShader.setMat4("model", _bvSign);
+		bvSign.Draw(bucSignShader);
+
 
 		//// 1. render depth of scene to texture (from light's perspective)
 		//// --------------------------------------------------------------
@@ -344,6 +414,7 @@ int main()
 		//glActiveTexture(GL_TEXTURE1);
 		//glBindTexture(GL_TEXTURE_2D, depthMap);
 
+
 		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) // driver camera
 			key = 1;
 		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) // 3rd person camera
@@ -355,8 +426,21 @@ int main()
 		if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS) // stop train
 			start = 0;
 
+		switch (key)
+		{
+		case 1:
+			if (!start)
+				camera.setViewMatrix(glm::vec3(-260.0f, -2.0f, 167.0f));
+			else
+				key = 2;
+			break;
+		case 2:
+			camera.setViewMatrix(glm::vec3(startX - 15, startY + 50, startZ + 100));
+			break;
+		default:
+			break;
+		}
 
-	
 		// draw skybox as last
 		glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
 		skyboxShader.use();
