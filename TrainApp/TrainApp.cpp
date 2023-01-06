@@ -287,7 +287,7 @@ int main()
 		stationShader.use();
 		trainShader.use();
 		terrainShader.use();
-		tomShader.use();
+		
 
 		trainShader.setMat4("projection", projection);
 		trainShader.setMat4("view", view);
